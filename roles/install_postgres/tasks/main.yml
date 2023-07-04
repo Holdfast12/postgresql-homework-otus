@@ -1,0 +1,26 @@
+- name: disable old postgresql module
+  shell: dnf -qy module disable postgresql
+
+- name: install postgres
+  ansible.builtin.dnf:
+    name: postgresql15-server
+    disablerepo: appstream,baseos,extras
+    enablerepo: local
+    disable_gpg_check: true
+    update_cache: yes
+    install_weak_deps: false
+
+- name: check init 
+  stat:
+    path: /var/lib/pgsql/15/data/pg_stat
+  register: stat_result
+
+- name: initialization setup
+  shell: sudo /usr/pgsql-15/bin/postgresql-15-setup initdb
+  when: not stat_result.stat.exists
+
+- name: enable and start service
+  service:
+    name: postgresql-15
+    state: started
+    enabled: true

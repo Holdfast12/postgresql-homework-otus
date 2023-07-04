@@ -1,0 +1,63 @@
+- name: set timezone to Moscow
+  timezone:
+    name: Europe/Moscow
+
+- name: resolve barman
+  lineinfile:
+    path: /etc/hosts
+    line: '192.168.56.13 barman'
+  when: (ansible_hostname != "barman")
+
+- name: resolve node1
+  lineinfile:
+    path: /etc/hosts
+    line: '192.168.56.11 node1'
+  when: (ansible_hostname != "node1")
+
+- name: resolve node2
+  lineinfile:
+    path: /etc/hosts
+    line: '192.168.56.12 node2'
+  when: (ansible_hostname != "node2")
+  
+- name: add local repo address
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: 77.232.135.161 repo.local
+
+- name: copy local repo file
+  ansible.builtin.copy:
+    src: local.repo
+    dest: /etc/yum.repos.d/
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: disable firewalld service
+  service:
+    name: firewalld
+    state: stopped
+    enabled: false
+
+- name: disable selinux
+  ansible.posix.selinux:
+    state: disabled
+
+- name: ensure SELinux is set to disable mode
+  lineinfile:
+    path: /etc/selinux/config
+    regexp: '^SELINUX='
+    line: SELINUX=disabled
+
+- name: Install base tools
+  ansible.builtin.dnf:
+    name:
+    - glibc-langpack-ru
+    - vim
+    - telnet
+    - rsync
+    disablerepo: appstream,baseos,extras
+    enablerepo: local
+    disable_gpg_check: true
+    update_cache: yes
+    install_weak_deps: false
